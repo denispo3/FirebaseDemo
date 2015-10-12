@@ -1,12 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
-    android:layout_height="match_parent"  tools:context="com.example.denis.firebasechat.ChatFragment">
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.example.denis.firebasechat.ChatFragment">
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/rvChat"
-        tools:listitem="@layout/item_chat"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:layout_above="@+id/llMessageBlock"
+        tools:listitem="@layout/item_chat" />
+
+    <LinearLayout
+        android:id="@+id/llMessageBlock"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="#789999"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="8dp">
+
+        <EditText
+            android:id="@+id/etMessage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight=".7"
+            android:ems="10"
+            android:hint="Type your message here"
+            android:imeOptions="actionSend"
+            android:inputType="text" />
+
+        <ImageButton
+            android:id="@+id/btnSendMessage"
+            style="@style/Widget.AppCompat.Button.Colored"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight=".2"
+            android:src="@android:drawable/ic_menu_send" />
+    </LinearLayout>
 
 </RelativeLayout>
