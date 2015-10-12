@@ -24,7 +24,6 @@ public class MainFragment extends Fragment {
 
     private Firebase mFirebaseRef;
 
-    public static final String FIREBASE_URL = "https://burning-fire-3180.firebaseio.com/";
     private static final String LOG_TAG = "MainFragment";
 
     @Override
@@ -51,7 +50,7 @@ public class MainFragment extends Fragment {
     }
 
     public void createUser() {
-        mFirebaseRef = new Firebase(FIREBASE_URL);
+        mFirebaseRef = new Firebase(Constants.FIREBASE_URL);
 
         final String email = etEmail.getText().toString();
         final String password = etPassword.getText().toString();
@@ -59,13 +58,13 @@ public class MainFragment extends Fragment {
         mFirebaseRef.createUser(email, password, new Firebase.ValueResultHandler<Map<String, Object>>() {
             @Override
             public void onSuccess(Map<String, Object> stringObjectMap) {
-                authUser(email, password);
+                authUser(email, password, true);
             }
 
             @Override
             public void onError(FirebaseError firebaseError) {
                 if (firebaseError.getCode() == FirebaseError.EMAIL_TAKEN) {
-                    authUser(email, password);
+                    authUser(email, password, !etName.getText().toString().isEmpty());
                 } else {
                     Log.d(LOG_TAG, "" + firebaseError.getMessage());
                     Snackbar.make(rlRootContainer, firebaseError.getMessage(), Snackbar.LENGTH_LONG).show();
@@ -74,17 +73,25 @@ public class MainFragment extends Fragment {
         });
     }
 
-    private void authUser(final String email, String password) {
+    private void authUser(final String email, String password, final boolean updateUser) {
         mFirebaseRef.authWithPassword(email, password, new Firebase.AuthResultHandler() {
             @Override
-            public void onAuthenticated(AuthData authData) {
+            public void onAuthenticated(final AuthData authData) {
                 Log.d(LOG_TAG, "auth: " + authData.toString());
-                User user = new User();
-                user.email = email;
-                user.name = etName.getText().toString();
-                user.avatarPath = (String) authData.getProviderData().get("profileImageURL");
-                mFirebaseRef.child("users/" + authData.getUid()).setValue(user);
-                getFragmentManager().beginTransaction().replace(R.id.flContainer, ChatFragment.newInstance(authData.getUid())).commit();
+                if (updateUser) {
+                    User user = new User();
+                    user.email = email;
+                    user.name = etName.getText().toString();
+                    user.avatarPath = (String) authData.getProviderData().get("profileImageURL");
+                    mFirebaseRef.child(Constants.FIREBASE_USERS).child(authData.getUid()).setValue(user, new Firebase.CompletionListener() {
+                        @Override
+                        public void onComplete(FirebaseError firebaseError, Firebase firebase) {
+                            runChatFragment(authData.getUid());
+                        }
+                    });
+                } else {
+                    runChatFragment(authData.getUid());
+                }
             }
 
             @Override
@@ -92,5 +99,10 @@ public class MainFragment extends Fragment {
                 Snackbar.make(rlRootContainer, firebaseError.getMessage(), Snackbar.LENGTH_LONG).show();
             }
         });
+    }
+
+    private void runChatFragment(String uid) {
+        getFragmentManager().beginTransaction().replace(R.id.flContainer, ChatFragment.newInstance(uid)).commit();
+
     }
 }
