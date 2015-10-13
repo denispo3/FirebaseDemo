@@ -11,10 +11,13 @@ import android.widget.TextView;
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
+import com.firebase.client.ServerValue;
 import com.firebase.client.ValueEventListener;
 import com.squareup.picasso.Picasso;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +35,7 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.MessageViewHol
 
     private List<Message> messages = new ArrayList<>();
     private Map<String, User> users = new HashMap<>();
+    private MessageAddedCallback messageAddedCallback;
 
     public ChatAdapter(Context context) {
         this.context = context;
@@ -51,27 +55,27 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.MessageViewHol
                     users.put(msg.uid, dataSnapshot.getValue(User.class));
                     messages.add(msg);
                     notifyItemInserted(messages.size());
+                    notifyMessageAdded();
                 }
 
                 @Override
-                public void onCancelled(FirebaseError firebaseError) {
-
-                }
+                public void onCancelled(FirebaseError firebaseError) {}
             });
         } else {
             messages.add(msg);
-
             notifyItemInserted(messages.size());
+            notifyMessageAdded();
         }
     }
 
     public static class MessageViewHolder extends RecyclerView.ViewHolder {
-        TextView tvMessage, tvAuthor;
+        TextView tvMessage, tvAuthor, tvTime;
         ImageView ivAvatar;
 
         public MessageViewHolder(View itemView) {
             super(itemView);
             tvAuthor = (TextView) itemView.findViewById(R.id.tvUserName);
+            tvTime = (TextView) itemView.findViewById(R.id.tvTime);
             tvMessage = (TextView) itemView.findViewById(R.id.tvMessageText);
             ivAvatar = (ImageView) itemView.findViewById(R.id.ivAvatar);
         }
@@ -83,7 +87,12 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.MessageViewHol
         holder.tvMessage.setText(msg.message);
         User user = getUserById(msg.uid);
         holder.tvAuthor.setText(user.name);
+        if (msg.uid.equals(currentUserId))
+            holder.tvAuthor.setTextColor(context.getResources().getColor(R.color.colorPrimary));
         Picasso.with(context).load(user.avatarPath).into(holder.ivAvatar);
+        Date date = new Date(msg.timeStamp);
+        SimpleDateFormat sdf = new SimpleDateFormat("DDD dd/MM/yy hh:mm:ss");
+        holder.tvTime.setText(sdf.format(date));
     }
 
     private User getUserById(String uid) {
@@ -92,11 +101,24 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.MessageViewHol
 
     @Override
     public MessageViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        return new MessageViewHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.item_chat, null, false));
+        return new MessageViewHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.item_chat, parent, false));
     }
 
     @Override
     public int getItemCount() {
         return messages.size();
+    }
+
+    public void setMessageAddedCallback(MessageAddedCallback messageAddedCallback) {
+        this.messageAddedCallback = messageAddedCallback;
+    }
+
+    private void notifyMessageAdded() {
+        if (messageAddedCallback != null)
+            messageAddedCallback.messageAdded();
+    }
+
+    public interface MessageAddedCallback {
+        void messageAdded();
     }
 }

@@ -12,15 +12,16 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.TextView;
 
 import com.firebase.client.ChildEventListener;
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
+import com.firebase.client.ServerValue;
 import com.firebase.client.ValueEventListener;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class ChatFragment extends Fragment {
@@ -32,8 +33,9 @@ public class ChatFragment extends Fragment {
     private RecyclerView rvChat;
     private EditText etMessage;
     private ImageButton btnSend;
+    private TextView tvOfflineMode;
 
-    private Firebase mFirebaseMessagesRef, mFirebaseUsersRef;
+    private Firebase mFirebaseMessagesRef, mFirebaseConnectionRef;
     private ChatAdapter mChatAdapter;
 
     private String uid = "";
@@ -58,6 +60,7 @@ public class ChatFragment extends Fragment {
         rvChat = (RecyclerView) view.findViewById(R.id.rvChat);
         etMessage = (EditText) view.findViewById(R.id.etMessage);
         btnSend = (ImageButton) view.findViewById(R.id.btnSendMessage);
+        tvOfflineMode = (TextView) view.findViewById(R.id.tvOfflineMode);
     }
 
     @Override
@@ -66,8 +69,8 @@ public class ChatFragment extends Fragment {
 
         // Init path to messages
         mFirebaseMessagesRef = new Firebase(Constants.FIREBASE_URL).child(Constants.FIREBASE_MESSAGES);
-        // Init path to users
-        mFirebaseUsersRef = new Firebase(Constants.FIREBASE_URL).child(Constants.FIREBASE_USERS);
+        //Init path to connection state
+        mFirebaseConnectionRef = new Firebase(Constants.FIREBASE_URL).child(".info/connected");
 
         // Get user id
         Bundle args = getArguments();
@@ -75,8 +78,8 @@ public class ChatFragment extends Fragment {
             uid = args.getString(UID_KEY);
         }
 
-        setListeners();
         initRecyclerView();
+        setListeners();
     }
 
     @Override
@@ -84,9 +87,32 @@ public class ChatFragment extends Fragment {
         super.onResume();
 
         startFirebaseTracking();
+        startOfflineModeTracking();
     }
 
+    private void startOfflineModeTracking() {
+        mFirebaseConnectionRef.addValueEventListener(firebaseConnectionListener);
+    }
+
+    // Listener to monitor connection state
+    private ValueEventListener firebaseConnectionListener = new ValueEventListener() {
+        @Override
+        public void onDataChange(DataSnapshot snapshot) {
+            boolean connected = snapshot.getValue(Boolean.class);
+            if (connected) {
+                tvOfflineMode.setVisibility(View.GONE);
+            } else {
+                tvOfflineMode.setVisibility(View.VISIBLE);
+            }
+        }
+
+        @Override
+        public void onCancelled(FirebaseError error) {
+        }
+    };
+
     private void startFirebaseTracking() {
+        mChatAdapter.setCurrentUserId(uid);
         mFirebaseMessagesRef.addChildEventListener(messagesChildEventListener);
     }
 
@@ -98,16 +124,20 @@ public class ChatFragment extends Fragment {
         }
 
         @Override
-        public void onChildChanged(DataSnapshot dataSnapshot, String s) {}
+        public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+        }
 
         @Override
-        public void onChildRemoved(DataSnapshot dataSnapshot) {}
+        public void onChildRemoved(DataSnapshot dataSnapshot) {
+        }
 
         @Override
-        public void onChildMoved(DataSnapshot dataSnapshot, String s) {}
+        public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+        }
 
         @Override
-        public void onCancelled(FirebaseError firebaseError) {}
+        public void onCancelled(FirebaseError firebaseError) {
+        }
     };
 
     private void initRecyclerView() {
@@ -124,14 +154,22 @@ public class ChatFragment extends Fragment {
                 sendMessage();
             }
         });
+        mChatAdapter.setMessageAddedCallback(new ChatAdapter.MessageAddedCallback() {
+            @Override
+            public void messageAdded() {
+                rvChat.smoothScrollToPosition(mChatAdapter.getItemCount());
+            }
+        });
     }
 
     private void sendMessage() {
         String msgText = etMessage.getText().toString();
         if (!msgText.isEmpty()) {
             etMessage.setText("");
+            Log.d(LOG_TAG, ServerValue.TIMESTAMP.toString());
             Message msg = new Message(uid, msgText);
-            mFirebaseMessagesRef.push().setValue(msg);
+
+            mFirebaseMessagesRef.push().setValue(msg.getObjectMapping());
         }
     }
 
@@ -139,5 +177,6 @@ public class ChatFragment extends Fragment {
     public void onStop() {
         super.onStop();
         mFirebaseMessagesRef.removeEventListener(messagesChildEventListener);
+        mFirebaseMessagesRef.removeEventListener(firebaseConnectionListener);
     }
 }

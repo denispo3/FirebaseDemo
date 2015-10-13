@@ -8,4 +8,5 @@ public class Constants {
     public static final String FIREBASE_USERS = "users";
     public static final String FIREBASE_MESSAGES = "messages";
 
+    public static final String SHARED_PREFS_USER_TOKEN_KEY = "sp_user_token";
 }

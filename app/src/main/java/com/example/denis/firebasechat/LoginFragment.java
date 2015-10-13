@@ -1,5 +1,7 @@
 package com.example.denis.firebasechat;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.app.Fragment;
 import android.support.design.widget.Snackbar;
@@ -17,14 +19,14 @@ import com.firebase.client.FirebaseError;
 import java.util.Map;
 
 
-public class MainFragment extends Fragment {
+public class LoginFragment extends Fragment {
 
     private EditText etName, etEmail, etPassword;
     private RelativeLayout rlRootContainer;
 
-    private Firebase mFirebaseRef;
+    private Firebase mFirebaseRootRef;
 
-    private static final String LOG_TAG = "MainFragment";
+    private static final String LOG_TAG = "LoginFragment";
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -47,15 +49,30 @@ public class MainFragment extends Fragment {
                 createUser();
             }
         });
+
+        mFirebaseRootRef = new Firebase(Constants.FIREBASE_URL);
+
+        tryAutoLogin();
+    }
+
+    private void tryAutoLogin() {
+        mFirebaseRootRef.authWithCustomToken(getToken(), new Firebase.AuthResultHandler() {
+            @Override
+            public void onAuthenticated(AuthData authData) {
+                runChatFragment(authData.getUid());
+            }
+
+            @Override
+            public void onAuthenticationError(FirebaseError firebaseError) {
+            }
+        });
     }
 
     public void createUser() {
-        mFirebaseRef = new Firebase(Constants.FIREBASE_URL);
-
         final String email = etEmail.getText().toString();
         final String password = etPassword.getText().toString();
 
-        mFirebaseRef.createUser(email, password, new Firebase.ValueResultHandler<Map<String, Object>>() {
+        mFirebaseRootRef.createUser(email, password, new Firebase.ValueResultHandler<Map<String, Object>>() {
             @Override
             public void onSuccess(Map<String, Object> stringObjectMap) {
                 authUser(email, password, true);
@@ -74,16 +91,17 @@ public class MainFragment extends Fragment {
     }
 
     private void authUser(final String email, String password, final boolean updateUser) {
-        mFirebaseRef.authWithPassword(email, password, new Firebase.AuthResultHandler() {
+        mFirebaseRootRef.authWithPassword(email, password, new Firebase.AuthResultHandler() {
             @Override
             public void onAuthenticated(final AuthData authData) {
+                saveToken(authData.getToken());
                 Log.d(LOG_TAG, "auth: " + authData.toString());
                 if (updateUser) {
                     User user = new User();
                     user.email = email;
                     user.name = etName.getText().toString();
                     user.avatarPath = (String) authData.getProviderData().get("profileImageURL");
-                    mFirebaseRef.child(Constants.FIREBASE_USERS).child(authData.getUid()).setValue(user, new Firebase.CompletionListener() {
+                    mFirebaseRootRef.child(Constants.FIREBASE_USERS).child(authData.getUid()).setValue(user, new Firebase.CompletionListener() {
                         @Override
                         public void onComplete(FirebaseError firebaseError, Firebase firebase) {
                             runChatFragment(authData.getUid());
@@ -103,6 +121,15 @@ public class MainFragment extends Fragment {
 
     private void runChatFragment(String uid) {
         getFragmentManager().beginTransaction().replace(R.id.flContainer, ChatFragment.newInstance(uid)).commit();
+    }
 
+    private void saveToken(String token) {
+        SharedPreferences sp = getActivity().getPreferences(Context.MODE_PRIVATE);
+        sp.edit().putString(Constants.SHARED_PREFS_USER_TOKEN_KEY, token).apply();
+    }
+
+    private String getToken() {
+        SharedPreferences sp = getActivity().getPreferences(Context.MODE_PRIVATE);
+        return sp.getString(Constants.SHARED_PREFS_USER_TOKEN_KEY, "");
     }
 }

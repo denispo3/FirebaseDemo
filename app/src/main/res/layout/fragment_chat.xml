@@ -5,11 +5,23 @@
     android:layout_height="match_parent"
     tools:context="com.example.denis.firebasechat.ChatFragment">
 
+    <TextView
+        android:id="@+id/tvOfflineMode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="5dp"
+        android:text="Offline mode"
+        android:visibility="gone"
+        android:textColor="@android:color/holo_red_dark"
+        android:textSize="16sp" />
+
     <android.support.v7.widget.RecyclerView
         android:id="@+id/rvChat"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_above="@+id/llMessageBlock"
+        android:layout_below="@+id/tvOfflineMode"
         android:isScrollContainer="false"
         tools:listitem="@layout/item_chat" />
 
