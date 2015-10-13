@@ -87,39 +87,7 @@ public class ChatFragment extends Fragment {
     }
 
     private void startFirebaseTracking() {
-        // Start Firebase tracking
-        mFirebaseUsersRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                updateUsers(dataSnapshot);
-                mFirebaseUsersRef.addValueEventListener(usersValueEventListener);
-                mFirebaseMessagesRef.addChildEventListener(messagesChildEventListener);
-            }
-
-            @Override
-            public void onCancelled(FirebaseError firebaseError) {
-            }
-        });
-    }
-
-    private ValueEventListener usersValueEventListener =  new ValueEventListener() {
-        @Override
-        public void onDataChange(DataSnapshot dataSnapshot) {
-            updateUsers(dataSnapshot);
-        }
-
-        @Override
-        public void onCancelled(FirebaseError firebaseError) {
-        }
-    };
-
-    private void updateUsers(DataSnapshot dataSnapshot) {
-        HashMap<String, User> users = (HashMap<String, User>) dataSnapshot.getValue();
-        for (String uid: users.keySet())
-            Log.d(LOG_TAG, "uid: " + uid);
-        for (User user: users.values())
-            Log.d(LOG_TAG, "name: " + user.name);
-        mChatAdapter.setUsers(users);
+        mFirebaseMessagesRef.addChildEventListener(messagesChildEventListener);
     }
 
     private ChildEventListener messagesChildEventListener = new ChildEventListener() {
@@ -171,6 +139,5 @@ public class ChatFragment extends Fragment {
     public void onStop() {
         super.onStop();
         mFirebaseMessagesRef.removeEventListener(messagesChildEventListener);
-        mFirebaseUsersRef.removeEventListener(usersValueEventListener);
     }
 }

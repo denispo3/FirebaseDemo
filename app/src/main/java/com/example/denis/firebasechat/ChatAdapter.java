@@ -8,6 +8,10 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.firebase.client.DataSnapshot;
+import com.firebase.client.Firebase;
+import com.firebase.client.FirebaseError;
+import com.firebase.client.ValueEventListener;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
@@ -22,20 +26,43 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.MessageViewHol
 
     public Context context;
 
+    private Firebase mFirebaseUsersRef;
+
+    private String currentUserId = "";
+
     private List<Message> messages = new ArrayList<>();
     private Map<String, User> users = new HashMap<>();
 
     public ChatAdapter(Context context) {
         this.context = context;
+        mFirebaseUsersRef = new Firebase(Constants.FIREBASE_URL).child(Constants.FIREBASE_USERS);
     }
 
-    public void addMessage(Message msg) {
-        messages.add(msg);
-        notifyItemInserted(messages.size());
+    public void setCurrentUserId(String uid) {
+        currentUserId = uid;
     }
 
-    public void setUsers(Map<String, User> users) {
-        this.users = users;
+    public void addMessage(final Message msg) {
+        String uid = msg.uid;
+        if (users.get(uid) == null) {
+            mFirebaseUsersRef.child(msg.uid).addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    users.put(msg.uid, dataSnapshot.getValue(User.class));
+                    messages.add(msg);
+                    notifyItemInserted(messages.size());
+                }
+
+                @Override
+                public void onCancelled(FirebaseError firebaseError) {
+
+                }
+            });
+        } else {
+            messages.add(msg);
+
+            notifyItemInserted(messages.size());
+        }
     }
 
     public static class MessageViewHolder extends RecyclerView.ViewHolder {
