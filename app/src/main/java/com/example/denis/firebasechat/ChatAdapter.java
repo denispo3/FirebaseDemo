@@ -11,7 +11,6 @@ import android.widget.TextView;
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
-import com.firebase.client.ServerValue;
 import com.firebase.client.ValueEventListener;
 import com.squareup.picasso.Picasso;
 
@@ -39,7 +38,7 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.MessageViewHol
 
     public ChatAdapter(Context context) {
         this.context = context;
-        mFirebaseUsersRef = new Firebase(Constants.FIREBASE_URL).child(Constants.FIREBASE_USERS);
+        mFirebaseUsersRef = new Firebase(FBConstants.FIREBASE_URL).child(FBConstants.FIREBASE_USERS);
     }
 
     public void setCurrentUserId(String uid) {
@@ -89,9 +88,12 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.MessageViewHol
         holder.tvAuthor.setText(user.name);
         if (msg.uid.equals(currentUserId))
             holder.tvAuthor.setTextColor(context.getResources().getColor(R.color.colorPrimary));
+        else
+            holder.tvAuthor.setTextColor(context.getResources().getColor(R.color.colorAccent));
+
         Picasso.with(context).load(user.avatarPath).into(holder.ivAvatar);
         Date date = new Date(msg.timeStamp);
-        SimpleDateFormat sdf = new SimpleDateFormat("DDD dd/MM/yy hh:mm:ss");
+        SimpleDateFormat sdf = new SimpleDateFormat("EEE dd/MM/yy HH:mm:ss");
         holder.tvTime.setText(sdf.format(date));
     }
 

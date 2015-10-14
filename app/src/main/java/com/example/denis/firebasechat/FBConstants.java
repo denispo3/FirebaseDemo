@@ -3,10 +3,10 @@ package com.example.denis.firebasechat;
 /**
  * Created by denis on 12.10.15.
  */
-public class Constants {
+public class FBConstants {
     public static final String FIREBASE_URL = "https://burning-fire-3180.firebaseio.com/";
     public static final String FIREBASE_USERS = "users";
     public static final String FIREBASE_MESSAGES = "messages";
-
-    public static final String SHARED_PREFS_USER_TOKEN_KEY = "sp_user_token";
+    public static final String FIREBASE_CONNECTION_PATH = ".info/connected";
+    public static final int FIREBASE_QUERY_LIMIT = 30;
 }

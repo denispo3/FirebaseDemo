@@ -1,7 +1,5 @@
 package com.example.denis.firebasechat;
 
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.app.Fragment;
 import android.support.design.widget.Snackbar;
@@ -50,15 +48,16 @@ public class LoginFragment extends Fragment {
             }
         });
 
-        mFirebaseRootRef = new Firebase(Constants.FIREBASE_URL);
+        mFirebaseRootRef = new Firebase(FBConstants.FIREBASE_URL);
 
         tryAutoLogin();
     }
 
     private void tryAutoLogin() {
-        mFirebaseRootRef.authWithCustomToken(getToken(), new Firebase.AuthResultHandler() {
+        mFirebaseRootRef.authWithCustomToken(SharedPrefUtils.getToken(getActivity()), new Firebase.AuthResultHandler() {
             @Override
             public void onAuthenticated(AuthData authData) {
+                SharedPrefUtils.saveToken(getActivity(), authData.getToken());
                 runChatFragment(authData.getUid());
             }
 
@@ -94,14 +93,14 @@ public class LoginFragment extends Fragment {
         mFirebaseRootRef.authWithPassword(email, password, new Firebase.AuthResultHandler() {
             @Override
             public void onAuthenticated(final AuthData authData) {
-                saveToken(authData.getToken());
-                Log.d(LOG_TAG, "auth: " + authData.toString());
+                SharedPrefUtils.saveToken(getActivity(), authData.getToken());
+                //Log.d(LOG_TAG, "auth: " + authData.toString());
                 if (updateUser) {
                     User user = new User();
                     user.email = email;
                     user.name = etName.getText().toString();
                     user.avatarPath = (String) authData.getProviderData().get("profileImageURL");
-                    mFirebaseRootRef.child(Constants.FIREBASE_USERS).child(authData.getUid()).setValue(user, new Firebase.CompletionListener() {
+                    mFirebaseRootRef.child(FBConstants.FIREBASE_USERS).child(authData.getUid()).setValue(user, new Firebase.CompletionListener() {
                         @Override
                         public void onComplete(FirebaseError firebaseError, Firebase firebase) {
                             runChatFragment(authData.getUid());
@@ -123,13 +122,4 @@ public class LoginFragment extends Fragment {
         getFragmentManager().beginTransaction().replace(R.id.flContainer, ChatFragment.newInstance(uid)).commit();
     }
 
-    private void saveToken(String token) {
-        SharedPreferences sp = getActivity().getPreferences(Context.MODE_PRIVATE);
-        sp.edit().putString(Constants.SHARED_PREFS_USER_TOKEN_KEY, token).apply();
-    }
-
-    private String getToken() {
-        SharedPreferences sp = getActivity().getPreferences(Context.MODE_PRIVATE);
-        return sp.getString(Constants.SHARED_PREFS_USER_TOKEN_KEY, "");
-    }
 }

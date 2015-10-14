@@ -7,7 +7,11 @@ import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
@@ -18,11 +22,9 @@ import com.firebase.client.ChildEventListener;
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
+import com.firebase.client.Query;
 import com.firebase.client.ServerValue;
 import com.firebase.client.ValueEventListener;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class ChatFragment extends Fragment {
 
@@ -36,6 +38,8 @@ public class ChatFragment extends Fragment {
     private TextView tvOfflineMode;
 
     private Firebase mFirebaseMessagesRef, mFirebaseConnectionRef;
+    private Query mFirebaseMessagesQuery;
+
     private ChatAdapter mChatAdapter;
 
     private String uid = "";
@@ -51,6 +55,7 @@ public class ChatFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        setHasOptionsMenu(true);
         return inflater.inflate(R.layout.fragment_chat, container, false);
     }
 
@@ -68,9 +73,10 @@ public class ChatFragment extends Fragment {
         super.onActivityCreated(savedInstanceState);
 
         // Init path to messages
-        mFirebaseMessagesRef = new Firebase(Constants.FIREBASE_URL).child(Constants.FIREBASE_MESSAGES);
+        mFirebaseMessagesRef = new Firebase(FBConstants.FIREBASE_URL).child(FBConstants.FIREBASE_MESSAGES);
+        mFirebaseMessagesQuery = mFirebaseMessagesRef.limitToLast(FBConstants.FIREBASE_QUERY_LIMIT);
         //Init path to connection state
-        mFirebaseConnectionRef = new Firebase(Constants.FIREBASE_URL).child(".info/connected");
+        mFirebaseConnectionRef = new Firebase(FBConstants.FIREBASE_URL).child(FBConstants.FIREBASE_CONNECTION_PATH);
 
         // Get user id
         Bundle args = getArguments();
@@ -80,6 +86,24 @@ public class ChatFragment extends Fragment {
 
         initRecyclerView();
         setListeners();
+        initMessageInput();
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.menu, menu);
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.menuLogout:
+                logout();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     @Override
@@ -88,6 +112,18 @@ public class ChatFragment extends Fragment {
 
         startFirebaseTracking();
         startOfflineModeTracking();
+    }
+
+    private void initMessageInput() {
+        etMessage.requestFocus();
+        etMessage.setOnKeyListener(new View.OnKeyListener() {
+            @Override
+            public boolean onKey(View v, int keyCode, KeyEvent event) {
+                if (event.getAction() == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_ENTER)
+                    sendMessage();
+                return false;
+            }
+        });
     }
 
     private void startOfflineModeTracking() {
@@ -113,7 +149,7 @@ public class ChatFragment extends Fragment {
 
     private void startFirebaseTracking() {
         mChatAdapter.setCurrentUserId(uid);
-        mFirebaseMessagesRef.addChildEventListener(messagesChildEventListener);
+        mFirebaseMessagesQuery.addChildEventListener(messagesChildEventListener);
     }
 
     private ChildEventListener messagesChildEventListener = new ChildEventListener() {
@@ -173,10 +209,16 @@ public class ChatFragment extends Fragment {
         }
     }
 
+    private void logout() {
+        mFirebaseMessagesRef.unauth();
+        SharedPrefUtils.clearToken(getActivity());
+        getFragmentManager().beginTransaction().replace(R.id.flContainer, new LoginFragment()).commit();
+    }
+
     @Override
     public void onStop() {
         super.onStop();
-        mFirebaseMessagesRef.removeEventListener(messagesChildEventListener);
+        mFirebaseMessagesQuery.removeEventListener(messagesChildEventListener);
         mFirebaseMessagesRef.removeEventListener(firebaseConnectionListener);
     }
 }
