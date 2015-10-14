@@ -29,7 +29,6 @@ import com.firebase.client.ValueEventListener;
 public class ChatFragment extends Fragment {
 
     private static final String LOG_TAG = "ChatFragment";
-
     private static final String UID_KEY = "user_key";
 
     private RecyclerView rvChat;
@@ -193,7 +192,6 @@ public class ChatFragment extends Fragment {
         mChatAdapter.setMessageAddedCallback(new ChatAdapter.MessageAddedCallback() {
             @Override
             public void messageAdded() {
-                Log.d(LOG_TAG, "messageAdded: " + mChatAdapter.getItemCount());
                 rvChat.getLayoutManager().scrollToPosition(mChatAdapter.getItemCount() - 1);
             }
         });
@@ -203,9 +201,7 @@ public class ChatFragment extends Fragment {
         String msgText = etMessage.getText().toString();
         if (!msgText.isEmpty()) {
             etMessage.setText("");
-            Log.d(LOG_TAG, ServerValue.TIMESTAMP.toString());
             Message msg = new Message(uid, msgText);
-
             mFirebaseMessagesRef.push().setValue(msg.getObjectMapping());
         }
     }

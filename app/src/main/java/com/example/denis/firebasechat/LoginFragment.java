@@ -3,13 +3,15 @@ package com.example.denis.firebasechat;
 import android.app.DialogFragment;
 import android.os.Bundle;
 import android.app.Fragment;
+import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import com.firebase.client.AuthData;
 import com.firebase.client.Firebase;
@@ -18,10 +20,12 @@ import com.firebase.client.FirebaseError;
 import java.util.Map;
 
 
-public class LoginFragment extends Fragment {
+public class LoginFragment extends Fragment implements View.OnClickListener {
 
     private EditText etName, etEmail, etPassword;
-    private RelativeLayout rlRootContainer;
+    private CoordinatorLayout rlRootContainer;
+    private TextView tvResetPassword;
+    private Button btnGoChatting;
 
     private Firebase mFirebaseRootRef;
 
@@ -30,7 +34,7 @@ public class LoginFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_main, container, false);
+        return inflater.inflate(R.layout.fragment_login, container, false);
     }
 
     @Override
@@ -40,18 +44,19 @@ public class LoginFragment extends Fragment {
         etName = (EditText) view.findViewById(R.id.etName);
         etEmail = (EditText) view.findViewById(R.id.etEmail);
         etPassword = (EditText) view.findViewById(R.id.etPassword);
-        rlRootContainer = (RelativeLayout) view.findViewById(R.id.rlRootContainer);
+        rlRootContainer = (CoordinatorLayout) view.findViewById(R.id.rlRootContainer);
+        tvResetPassword = (TextView) view.findViewById(R.id.tvForgotPassword);
+        btnGoChatting = (Button) view.findViewById(R.id.btnGoChatting);
 
-        view.findViewById(R.id.btnGoChatting).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                createUser();
-            }
-        });
+        setListeners();
 
         mFirebaseRootRef = new Firebase(FBConstants.FIREBASE_URL);
-
         tryAutoLogin();
+    }
+
+    private void setListeners() {
+        btnGoChatting.setOnClickListener(this);
+        tvResetPassword.setOnClickListener(this);
     }
 
     private void showLoadingDialog() {
@@ -144,4 +149,35 @@ public class LoginFragment extends Fragment {
         getFragmentManager().beginTransaction().replace(R.id.flContainer, ChatFragment.newInstance(uid)).commit();
     }
 
+    @Override
+    public void onClick(View v) {
+        switch(v.getId()) {
+            case R.id.btnGoChatting:
+                createUser();
+                break;
+            case R.id.tvForgotPassword:
+                resetPassword();
+                break;
+        }
+    }
+
+    private void resetPassword() {
+        String email = etEmail.getText().toString();
+        if (!email.isEmpty()) {
+            showLoadingDialog();
+            mFirebaseRootRef.resetPassword(email, new Firebase.ResultHandler() {
+                @Override
+                public void onSuccess() {
+                    hideLoadingDialog();
+                    Snackbar.make(rlRootContainer, "You will receive new password on email", Snackbar.LENGTH_LONG).show();
+                }
+
+                @Override
+                public void onError(FirebaseError firebaseError) {
+                    hideLoadingDialog();
+                    Snackbar.make(rlRootContainer, firebaseError.getMessage(), Snackbar.LENGTH_LONG).show();
+                }
+            });
+        }
+    }
 }
