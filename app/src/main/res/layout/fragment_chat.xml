@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.example.denis.firebasechat.ChatFragment">
@@ -22,7 +23,6 @@
         android:layout_height="wrap_content"
         android:layout_above="@+id/llMessageBlock"
         android:layout_below="@+id/tvOfflineMode"
-        android:isScrollContainer="false"
         tools:listitem="@layout/item_chat" />
 
     <LinearLayout
@@ -42,6 +42,7 @@
             android:ems="10"
             android:hint="Type your message here"
             android:imeOptions="actionSend"
+            android:imeActionLabel="FIRE"
             android:inputType="text" />
 
         <ImageButton

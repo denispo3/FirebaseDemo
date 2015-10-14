@@ -58,7 +58,8 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.MessageViewHol
                 }
 
                 @Override
-                public void onCancelled(FirebaseError firebaseError) {}
+                public void onCancelled(FirebaseError firebaseError) {
+                }
             });
         } else {
             messages.add(msg);
@@ -85,7 +86,10 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.MessageViewHol
         Message msg = messages.get(position);
         holder.tvMessage.setText(msg.message);
         User user = getUserById(msg.uid);
-        holder.tvAuthor.setText(user.name);
+        if (user.name == null || user.name.isEmpty())
+            holder.tvAuthor.setText(user.email);
+        else
+            holder.tvAuthor.setText(user.name);
         if (msg.uid.equals(currentUserId))
             holder.tvAuthor.setTextColor(context.getResources().getColor(R.color.colorPrimary));
         else

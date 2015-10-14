@@ -193,7 +193,8 @@ public class ChatFragment extends Fragment {
         mChatAdapter.setMessageAddedCallback(new ChatAdapter.MessageAddedCallback() {
             @Override
             public void messageAdded() {
-                rvChat.smoothScrollToPosition(mChatAdapter.getItemCount());
+                Log.d(LOG_TAG, "messageAdded: " + mChatAdapter.getItemCount());
+                rvChat.getLayoutManager().scrollToPosition(mChatAdapter.getItemCount() - 1);
             }
         });
     }
