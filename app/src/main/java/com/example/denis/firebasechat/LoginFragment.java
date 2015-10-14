@@ -1,5 +1,6 @@
 package com.example.denis.firebasechat;
 
+import android.app.DialogFragment;
 import android.os.Bundle;
 import android.app.Fragment;
 import android.support.design.widget.Snackbar;
@@ -53,21 +54,39 @@ public class LoginFragment extends Fragment {
         tryAutoLogin();
     }
 
-    private void tryAutoLogin() {
-        mFirebaseRootRef.authWithCustomToken(SharedPrefUtils.getToken(getActivity()), new Firebase.AuthResultHandler() {
-            @Override
-            public void onAuthenticated(AuthData authData) {
-                SharedPrefUtils.saveToken(getActivity(), authData.getToken());
-                runChatFragment(authData.getUid());
-            }
+    private void showLoadingDialog() {
+        LoadingDialog loadingDialog = new LoadingDialog();
+        loadingDialog.show(getFragmentManager(), LoginFragment.class.getSimpleName());
+    }
 
-            @Override
-            public void onAuthenticationError(FirebaseError firebaseError) {
-            }
-        });
+    private void hideLoadingDialog() {
+        DialogFragment loadingDialog = (DialogFragment) getFragmentManager().findFragmentByTag(LoginFragment.class.getSimpleName());
+        if (loadingDialog != null)
+            loadingDialog.dismissAllowingStateLoss();
+    }
+
+    private void tryAutoLogin() {
+        String token = SharedPrefUtils.getToken(getActivity());
+        if (token != null && !token.isEmpty()) {
+            showLoadingDialog();
+            mFirebaseRootRef.authWithCustomToken(token, new Firebase.AuthResultHandler() {
+                @Override
+                public void onAuthenticated(AuthData authData) {
+                    hideLoadingDialog();
+                    SharedPrefUtils.saveToken(getActivity(), authData.getToken());
+                    runChatFragment(authData.getUid());
+                }
+
+                @Override
+                public void onAuthenticationError(FirebaseError firebaseError) {
+                    hideLoadingDialog();
+                }
+            });
+        }
     }
 
     public void createUser() {
+        showLoadingDialog();
         final String email = etEmail.getText().toString();
         final String password = etPassword.getText().toString();
 
@@ -82,7 +101,8 @@ public class LoginFragment extends Fragment {
                 if (firebaseError.getCode() == FirebaseError.EMAIL_TAKEN) {
                     authUser(email, password, !etName.getText().toString().isEmpty());
                 } else {
-                    Log.d(LOG_TAG, "" + firebaseError.getMessage());
+                    hideLoadingDialog();
+                    //Log.d(LOG_TAG, "" + firebaseError.getMessage());
                     Snackbar.make(rlRootContainer, firebaseError.getMessage(), Snackbar.LENGTH_LONG).show();
                 }
             }
@@ -93,6 +113,7 @@ public class LoginFragment extends Fragment {
         mFirebaseRootRef.authWithPassword(email, password, new Firebase.AuthResultHandler() {
             @Override
             public void onAuthenticated(final AuthData authData) {
+                hideLoadingDialog();
                 SharedPrefUtils.saveToken(getActivity(), authData.getToken());
                 //Log.d(LOG_TAG, "auth: " + authData.toString());
                 if (updateUser) {
@@ -113,6 +134,7 @@ public class LoginFragment extends Fragment {
 
             @Override
             public void onAuthenticationError(FirebaseError firebaseError) {
+                hideLoadingDialog();
                 Snackbar.make(rlRootContainer, firebaseError.getMessage(), Snackbar.LENGTH_LONG).show();
             }
         });
