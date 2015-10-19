@@ -2,7 +2,7 @@ package com.example.denis.firebasechat;
 
 
 import android.os.Bundle;
-import android.app.Fragment;
+import android.support.v4.app.Fragment;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -18,6 +18,7 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import com.facebook.login.LoginManager;
 import com.firebase.client.ChildEventListener;
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
@@ -207,9 +208,10 @@ public class ChatFragment extends Fragment {
     }
 
     private void logout() {
+        LoginManager.getInstance().logOut();
         mFirebaseMessagesRef.unauth();
         SharedPrefUtils.clearToken(getActivity());
-        getFragmentManager().beginTransaction().replace(R.id.flContainer, new LoginFragment()).commit();
+        getActivity().getSupportFragmentManager().beginTransaction().replace(R.id.flContainer, new LoginFragment()).commit();
     }
 
     @Override
