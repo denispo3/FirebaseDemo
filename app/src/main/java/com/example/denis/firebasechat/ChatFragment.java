@@ -173,6 +173,7 @@ public class ChatFragment extends Fragment {
 
         @Override
         public void onCancelled(FirebaseError firebaseError) {
+            logout();
         }
     };
 
@@ -215,9 +216,9 @@ public class ChatFragment extends Fragment {
     }
 
     @Override
-    public void onStop() {
-        super.onStop();
+    public void onPause() {
+        super.onPause();
         mFirebaseMessagesQuery.removeEventListener(messagesChildEventListener);
-        mFirebaseMessagesRef.removeEventListener(firebaseConnectionListener);
+        mFirebaseConnectionRef.removeEventListener(firebaseConnectionListener);
     }
 }

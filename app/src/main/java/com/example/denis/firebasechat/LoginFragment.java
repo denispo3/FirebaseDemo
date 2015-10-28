@@ -77,26 +77,7 @@ public class LoginFragment extends Fragment implements View.OnClickListener {
         btnFacebookLogin.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
             @Override
             public void onSuccess(LoginResult loginResult) {
-                showLoadingDialog();
-                mFirebaseRootRef.authWithOAuthToken("facebook", AccessToken.getCurrentAccessToken().getToken(), new Firebase.AuthResultHandler() {
-                    @Override
-                    public void onAuthenticated(AuthData authData) {
-                        hideLoadingDialog();
-                        //Log.d(LOG_TAG, "fb: " + authData.toString());
-                        User user = new User();
-                        user.email = authData.getProviderData().get("email").toString();
-                        user.name = authData.getProviderData().get("displayName").toString();
-                        user.avatarPath = (String) authData.getProviderData().get("profileImageURL");
-                        processAuthData(authData, user, true);
-                    }
-
-                    @Override
-                    public void onAuthenticationError(FirebaseError firebaseError) {
-                        hideLoadingDialog();
-                        Snackbar.make(rlRootContainer, firebaseError.getMessage(), Snackbar.LENGTH_LONG).show();
-                    }
-                });
-                Log.d(LOG_TAG, AccessToken.getCurrentAccessToken().getToken());
+                loginWithFacebook();
             }
 
             @Override
@@ -109,7 +90,35 @@ public class LoginFragment extends Fragment implements View.OnClickListener {
         });
     }
 
+    private void loginWithFacebook() {
+        showLoadingDialog();
+        mFirebaseRootRef.authWithOAuthToken("facebook", AccessToken.getCurrentAccessToken().getToken(), new Firebase.AuthResultHandler() {
+            @Override
+            public void onAuthenticated(AuthData authData) {
+                hideLoadingDialog();
+                //Log.d(LOG_TAG, "fb: " + authData.toString());
+                User user = new User();
+                user.email = authData.getProviderData().get("email").toString();
+                user.name = authData.getProviderData().get("displayName").toString();
+                user.avatarPath = (String) authData.getProviderData().get("profileImageURL");
+                processAuthData(authData, user, true);
+            }
+
+            @Override
+            public void onAuthenticationError(FirebaseError firebaseError) {
+                hideLoadingDialog();
+                Snackbar.make(rlRootContainer, firebaseError.getMessage(), Snackbar.LENGTH_LONG).show();
+            }
+        });
+    }
+
     private void tryToAutoLogin() {
+        AccessToken accessToken = AccessToken.getCurrentAccessToken();
+        if (accessToken != null && accessToken.getToken() != null && !accessToken.getToken().isEmpty()) {
+            Log.d(LOG_TAG, accessToken.getToken());
+            loginWithFacebook();
+            return;
+        }
         String token = SharedPrefUtils.getToken(getActivity());
         if (token != null && !token.isEmpty()) {
             showLoadingDialog();

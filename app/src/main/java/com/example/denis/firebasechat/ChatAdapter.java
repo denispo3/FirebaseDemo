@@ -45,7 +45,7 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.MessageViewHol
         currentUserId = uid;
     }
 
-    public synchronized void addMessage(final Message msg) {
+    public void addMessage(final Message msg) {
         String uid = msg.uid;
         if (users.get(uid) == null) {
             // If there is no user with such ID then download it and add to mapping
